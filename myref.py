@@ -237,7 +237,7 @@ def encrypt(K, k, S, PT): #pt is array of 4 32bit L's
     #print 'round[17]', map(hex, R)
     return R
 
-def decrypt(K, k, S, PT): #pt is array of 4 32bit L's
+def decrypt(K, k, S, PT, verbose=False): #pt is array of 4 32bit L's
     #BSWAP PT
     PT = [struct.unpack('>I', struct.pack('<I', x))[0] for x in PT]
     #PT.reverse()
@@ -257,7 +257,8 @@ def decrypt(K, k, S, PT): #pt is array of 4 32bit L's
         if (r > 0): #/* swap for next round */
             R[0], R[2] = R[2], R[0]
             R[1], R[3] = R[3], R[1]
-        print('round[%s]' % (r + 1), list(map(hex, R)))
+        if verbose:
+            print('round[%s]' % (r + 1), list(map(hex, R)))
 
     R = [R[2], R[3], R[0], R[1]]
     R = [R[(i + 2) % 4] ^ K[i] for i in range(4)]
