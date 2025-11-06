@@ -92,8 +92,7 @@ def benchmark_encrypt(
         for block in blocks:
             encrypt(K, k, S, block)
     elapsed = time.perf_counter() - start
-    total_bytes = iterations * len(blocks) * BLOCK_LEN
-    return total_bytes / elapsed
+    return (elapsed * 1000.0) / iterations
 
 
 def benchmark_decrypt(
@@ -111,8 +110,7 @@ def benchmark_decrypt(
         for block in blocks:
             decrypt(K, k, S, block, verbose=False)
     elapsed = time.perf_counter() - start
-    total_bytes = iterations * len(blocks) * BLOCK_LEN
-    return total_bytes / elapsed
+    return (elapsed * 1000.0) / iterations
 
 
 def run_validation(
@@ -137,16 +135,15 @@ def run_validation(
     recovered = pkcs7_unpad(b"".join(words_to_bytes(block) for block in decrypted_blocks))
     success = recovered == message
 
-    enc_throughput = benchmark_encrypt(K, k, S, blocks, benchmark_iterations)
-    dec_throughput = benchmark_decrypt(K, k, S, cipher_blocks, benchmark_iterations)
-    return success, enc_throughput, dec_throughput
+    enc_time_ms = benchmark_encrypt(K, k, S, blocks, benchmark_iterations)
+    dec_time_ms = benchmark_decrypt(K, k, S, cipher_blocks, benchmark_iterations)
+    return success, enc_time_ms, dec_time_ms
 
 
-def format_throughput(bytes_per_sec: float) -> str:
-    if not bytes_per_sec or bytes_per_sec != bytes_per_sec:  # NaN check
+def format_milliseconds(duration_ms: float) -> str:
+    if duration_ms != duration_ms:  # NaN check
         return "n/a"
-    mbps = bytes_per_sec / (1024 * 1024)
-    return f"{mbps:8.2f} MiB/s"
+    return f"{duration_ms:8.3f} ms"
 
 
 def main() -> None:
@@ -182,7 +179,7 @@ def main() -> None:
         "--benchmark-iterations",
         type=int,
         default=100,
-        help="Repetitions for throughput measurement",
+        help="Repetitions for timing measurement",
     )
     args = parser.parse_args()
 
@@ -201,10 +198,10 @@ def main() -> None:
                 print(f"  * Skipping non-positive message length {message_len}")
                 continue
 
-            enc_rates: List[float] = []
-            dec_rates: List[float] = []
+            enc_times: List[float] = []
+            dec_times: List[float] = []
             for sample_idx in range(args.samples):
-                success, enc_rate, dec_rate = run_validation(
+                success, enc_time, dec_time = run_validation(
                     key_bits,
                     message_len,
                     seed=args.seed,
@@ -215,13 +212,13 @@ def main() -> None:
                     raise AssertionError(
                         f"Round-trip failure for key={key_bits} bits message={message_len} bytes"
                     )
-                enc_rates.append(enc_rate)
-                dec_rates.append(dec_rate)
+                enc_times.append(enc_time)
+                dec_times.append(dec_time)
 
             print(
                 f"  * Message length {message_len:5d} bytes | "
-                f"enc avg {format_throughput(mean(enc_rates))} | "
-                f"dec avg {format_throughput(mean(dec_rates))}"
+                f"enc avg {format_milliseconds(mean(enc_times))} | "
+                f"dec avg {format_milliseconds(mean(dec_times))}"
             )
 
 
