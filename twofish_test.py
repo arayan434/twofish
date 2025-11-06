@@ -2,9 +2,8 @@
 """Utility helpers for exercising the Twofish reference implementation.
 
 The script verifies encryption/decryption for multiple key sizes and message
-lengths and optionally records encryption/decryption timings (in milliseconds)
-for each scenario.  Use ``python3 twofish_test.py --help`` to see available CLI
-flags.
+lengths and optionally records encryption/decryption throughput for each
+scenario.  Use ``python3 twofish_test.py --help`` to see available CLI flags.
 """
 
 from __future__ import annotations
